@@ -9,7 +9,7 @@ const (
 	// YukiS0Version is a reserved keyword to identiy generator version.
 	YukiS0Version = "yuki-s0"
 
-	yukis0Prime      uint64 = 26778299
+	yukiS0Prime      uint64 = 26778299
 	yukiS0MaxEntries uint64 = 1 << 24
 )
 

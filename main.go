@@ -15,10 +15,10 @@ import (
 )
 
 var (
-	data           = flag.String("data", "/var/tmp/store.json", "The json file to store shorten links")
-	addr           = flag.String("addr", "0.0.0.0:8080", "HTTP address")
-	allowedSchemes = flag.String("scheme-allowlist", "http,https,ftp", "The list of URL scheme that can be shortend.")
-
+	data              = flag.String("data", "/var/tmp/store.json", "The json file to store shorten links")
+	addr              = flag.String("addr", "0.0.0.0:8080", "HTTP address")
+	allowedSchemes    = flag.String("scheme-allowlist", "http,https,ftp", "The list of URL scheme that can be shortend.")
+	updatePath        = flag.String("update-path", "/update", "The path to insert a link")
 	generateURLPrefix = flag.String("prefix", "http://127.0.0.1:8080/", "The prefix of generated shorten url.")
 )
 
@@ -34,7 +34,7 @@ func main() {
 	for _, scheme := range strings.Split(*allowedSchemes, ",") {
 		schemeAllowlist[scheme] = true
 	}
-	http.HandleFunc("/api/v1/add", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc(*updatePath, func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err != nil {
 			http.Error(w, "cannot parse request", http.StatusBadRequest)
 			return

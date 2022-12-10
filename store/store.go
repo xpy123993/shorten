@@ -24,7 +24,7 @@ func NewStore(filePath string) (*Store, error) {
 	store := Store{
 		Version: YukiS0Version,
 		Generator: YukiS0Generator{
-			Prime:      yukis0Prime,
+			Prime:      yukiS0Prime,
 			MaxEntries: yukiS0MaxEntries,
 			Base:       rand.Uint64(),
 		},
