@@ -16,11 +16,9 @@ type archiveTask struct {
 }
 
 func createArciveWorker(taskChan chan archiveTask) {
-	ctx, cancel := chromedp.NewContext(context.Background())
-	defer cancel()
-
-	var buf []byte
 	for task := range taskChan {
+		ctx, cancel := chromedp.NewContext(context.Background())
+		var buf []byte
 		err := chromedp.Run(ctx, chromedp.Tasks{
 			chromedp.EmulateViewport(1920, 1080),
 			chromedp.Navigate(task.targetURL),
@@ -33,5 +31,6 @@ func createArciveWorker(taskChan chan archiveTask) {
 				log.Printf("failed to store screenshot: %v", err)
 			}
 		}
+		cancel()
 	}
 }

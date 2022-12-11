@@ -20,6 +20,7 @@ import (
 var (
 	data              = flag.String("data", "/var/tmp/store.json", "The json file to store shorten links")
 	screenshotFolder  = flag.String("screen-folder", "/var/tmp/", "The folder to save the screenshot.")
+	archiveWorkerNum  = flag.Int("archive-worker", 2, "Number of archive workers")
 	addr              = flag.String("addr", "0.0.0.0:8080", "HTTP address")
 	allowedSchemes    = flag.String("scheme-allowlist", "http,https,ftp", "The list of URL scheme that can be shortend.")
 	updatePath        = flag.String("update-path", "/update", "The path to insert a link")
@@ -126,7 +127,7 @@ func main() {
 	if len(*screenshotFolder) > 0 {
 		archiveChan = make(chan archiveTask)
 		defer close(archiveChan)
-		for i := 0; i < 4; i++ {
+		for i := 0; i < *archiveWorkerNum; i++ {
 			go createArciveWorker(archiveChan)
 		}
 	}
