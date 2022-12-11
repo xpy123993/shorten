@@ -1,6 +1,7 @@
 package store_test
 
 import (
+	"math/big"
 	"math/rand"
 	"os"
 	"testing"
@@ -11,12 +12,12 @@ import (
 
 func TestCoverage(t *testing.T) {
 	generator := store.YukiS0Generator{
-		Prime:      31,
-		MaxEntries: 16,
-		Base:       rand.Uint64(),
+		Prime:      *big.NewInt(31),
+		MaxEntries: 1 << 10,
+		Base:       rand.Int63(),
 	}
-	table := make(map[string]uint64)
-	for i := uint64(0); i < generator.MaxEntries; i++ {
+	table := make(map[string]int64)
+	for i := int64(0); i < generator.MaxEntries; i++ {
 		word, err := generator.Generate(i)
 		if err != nil {
 			t.Fatal(err)

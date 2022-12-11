@@ -1,6 +1,7 @@
 package store
 
 import (
+	rrand "crypto/rand"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -21,12 +22,16 @@ type Store struct {
 // NewStore creates a Store on given `filePath`.
 // It returns an error if `filePath` is not writable.
 func NewStore(filePath string) (*Store, error) {
+	prime, err := rrand.Prime(rrand.Reader, 2048)
+	if err != nil {
+		return nil, err
+	}
 	store := Store{
 		Version: YukiS0Version,
 		Generator: YukiS0Generator{
-			Prime:      yukiS0Prime,
+			Prime:      *prime,
 			MaxEntries: yukiS0MaxEntries,
-			Base:       rand.Uint64(),
+			Base:       rand.Int63(),
 		},
 		Table:        make(map[string]string),
 		reverseTable: make(map[string]string),
@@ -85,12 +90,12 @@ func (store *Store) AddLink(url string) (string, error) {
 		return shorten, nil
 	}
 
-	shorten, err := store.Generator.Generate(uint64(len(store.Table)))
+	shorten, err := store.Generator.Generate(int64(len(store.Table)))
 	if err != nil {
 		return "", err
 	}
 	if _, ok := store.Table[shorten]; ok {
-		return "", fmt.Errorf("URL collision")
+		return "", fmt.Errorf("unexpected hash collision: should not reach here")
 	}
 	store.Table[shorten] = url
 	store.reverseTable[url] = shorten
