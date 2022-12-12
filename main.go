@@ -28,6 +28,13 @@ var (
 	generateURLPrefix = flag.String("prefix", "http://127.0.0.1:8080/", "The prefix of generated shorten url.")
 )
 
+func getAbsoluteLink(baseUrl string) string {
+	if strings.HasPrefix(*generateURLPrefix, "http") {
+		return *generateURLPrefix + baseUrl
+	}
+	return "//" + *generateURLPrefix + baseUrl
+}
+
 func createHandler(schemeAllowList map[string]bool, urlStore *store.Store, archiveChan chan archiveTask) *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc(*updatePath, func(w http.ResponseWriter, r *http.Request) {
@@ -97,13 +104,17 @@ func createHandler(schemeAllowList map[string]bool, urlStore *store.Store, archi
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
+		if !strings.HasPrefix(targetURL, "http") {
+			http.Error(w, "archive is not supported for non-http pages", http.StatusNotImplemented)
+			return
+		}
 		if len(ext) == 0 {
 			fmt.Fprintf(w, `<html><head><title>URL Shortener</title></head>
 			<body><div>
 			This link is mapped to <a href='%s'>%s</a></div>
 			<div>Possible archives: <a href='%s'>PDF</a> <a href='%s'>PNG</a></div>
 			
-			</body></html>`, targetURL, targetURL, fmt.Sprintf("%s%s%s.pdf", *generateURLPrefix, *metadataPath, token), fmt.Sprintf("%s%s%s.png", *generateURLPrefix, *metadataPath, token))
+			</body></html>`, targetURL, targetURL, getAbsoluteLink(strings.TrimPrefix(*metadataPath, "/")+token+".pdf"), getAbsoluteLink(strings.TrimPrefix(*metadataPath, "/")+token+".png"))
 			return
 		}
 		targetFile := path.Join(*metadataFolder, requestedResource)
