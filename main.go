@@ -19,7 +19,7 @@ import (
 
 var (
 	data              = flag.String("data", "/var/tmp/store.json", "The json file to store shorten links")
-	screenshotFolder  = flag.String("screen-folder", "/var/tmp/", "The folder to save the screenshot.")
+	metadataFolder    = flag.String("metadata-folder", "/var/tmp/", "The folder to save the screenshot.")
 	archiveWorkerNum  = flag.Int("archive-worker", 2, "Number of archive workers")
 	addr              = flag.String("addr", "0.0.0.0:8080", "HTTP address")
 	allowedSchemes    = flag.String("scheme-allowlist", "http,https,ftp", "The list of URL scheme that can be shortend.")
@@ -57,7 +57,7 @@ func createHandler(schemeAllowList map[string]bool, urlStore *store.Store, archi
 			return
 		}
 		if archiveChan != nil {
-			if _, err := os.Stat(path.Join(*screenshotFolder, token+".png")); os.IsNotExist(err) {
+			if _, err := os.Stat(path.Join(*metadataFolder, token+".png")); os.IsNotExist(err) {
 				archiveChan <- archiveTask{targetURL: targetURL.String(), targetBaseName: token}
 			}
 		}
@@ -76,8 +76,17 @@ func createHandler(schemeAllowList map[string]bool, urlStore *store.Store, archi
 			fmt.Fprintf(w, "%s\n", url)
 		}
 	})
-	mux.HandleFunc("/img/", func(w http.ResponseWriter, r *http.Request) {
-		token := strings.TrimPrefix(r.RequestURI, "/img/")
+	mux.HandleFunc("/metadata/", func(w http.ResponseWriter, r *http.Request) {
+		requestedResource := strings.TrimPrefix(r.RequestURI, "/metadata/")
+		token := requestedResource
+		ext := strings.ToLower(path.Ext(requestedResource))
+		if len(ext) > 0 {
+			if ext != ".png" && ext != ".pdf" {
+				http.Error(w, "extension is not supported", http.StatusNotImplemented)
+				return
+			}
+			token = strings.TrimSuffix(requestedResource, ext)
+		}
 		if matched, err := regexp.MatchString("[a-zA-Z0-9_-]{3,8}", token); err != nil || !matched {
 			http.Error(w, "cannot parse target URL", http.StatusBadRequest)
 			return
@@ -87,7 +96,16 @@ func createHandler(schemeAllowList map[string]bool, urlStore *store.Store, archi
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
-		targetFile := path.Join(*screenshotFolder, token+".png")
+		if len(ext) == 0 {
+			fmt.Fprintf(w, `<html><head><title>URL Shortener</title></head>
+			<body><div>
+			This link is mapped to <a href='%s'>%s</a></div>
+			<div>Possible archives: <a href='%s'>PDF</a> <a href='%s'>PNG</a></div>
+			
+			</body></html>`, targetURL, targetURL, fmt.Sprintf("%smetadata/%s.pdf", *generateURLPrefix, token), fmt.Sprintf("%smetadata/%s.png", *generateURLPrefix, token))
+			return
+		}
+		targetFile := path.Join(*metadataFolder, requestedResource)
 		if _, err := os.Stat(targetFile); os.IsNotExist(err) {
 			archiveChan <- archiveTask{targetURL: targetURL, targetBaseName: token}
 		}
@@ -124,7 +142,7 @@ func main() {
 	defer lis.Close()
 
 	var archiveChan chan archiveTask
-	if len(*screenshotFolder) > 0 {
+	if len(*metadataFolder) > 0 {
 		archiveChan = make(chan archiveTask)
 		defer close(archiveChan)
 		for i := 0; i < *archiveWorkerNum; i++ {
