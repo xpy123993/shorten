@@ -19,7 +19,8 @@ import (
 
 var (
 	data              = flag.String("data", "/var/tmp/store.json", "The json file to store shorten links")
-	metadataFolder    = flag.String("metadata-folder", "/var/tmp/", "The folder to save the screenshot.")
+	metadataFolder    = flag.String("metadata-folder", "/var/tmp/", "The folder to save the screenshot. Leave empty to disable the archive feature.")
+	metadataPath      = flag.String("metadata-path", "/metadata/", "The route path to store metadata files.")
 	archiveWorkerNum  = flag.Int("archive-worker", 2, "Number of archive workers")
 	addr              = flag.String("addr", "0.0.0.0:8080", "HTTP address")
 	allowedSchemes    = flag.String("scheme-allowlist", "http,https,ftp", "The list of URL scheme that can be shortend.")
@@ -76,8 +77,8 @@ func createHandler(schemeAllowList map[string]bool, urlStore *store.Store, archi
 			fmt.Fprintf(w, "%s\n", url)
 		}
 	})
-	mux.HandleFunc("/metadata/", func(w http.ResponseWriter, r *http.Request) {
-		requestedResource := strings.TrimPrefix(r.RequestURI, "/metadata/")
+	mux.HandleFunc(*metadataPath, func(w http.ResponseWriter, r *http.Request) {
+		requestedResource := strings.TrimPrefix(r.RequestURI, *metadataPath)
 		token := requestedResource
 		ext := strings.ToLower(path.Ext(requestedResource))
 		if len(ext) > 0 {
@@ -102,7 +103,7 @@ func createHandler(schemeAllowList map[string]bool, urlStore *store.Store, archi
 			This link is mapped to <a href='%s'>%s</a></div>
 			<div>Possible archives: <a href='%s'>PDF</a> <a href='%s'>PNG</a></div>
 			
-			</body></html>`, targetURL, targetURL, fmt.Sprintf("%smetadata/%s.pdf", *generateURLPrefix, token), fmt.Sprintf("%smetadata/%s.png", *generateURLPrefix, token))
+			</body></html>`, targetURL, targetURL, fmt.Sprintf("%s%s%s.pdf", *generateURLPrefix, *metadataPath, token), fmt.Sprintf("%s%s%s.png", *generateURLPrefix, *metadataPath, token))
 			return
 		}
 		targetFile := path.Join(*metadataFolder, requestedResource)
