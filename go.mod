@@ -2,10 +2,12 @@ module github.com/xpy123993/shorten
 
 go 1.18
 
-require github.com/chromedp/chromedp v0.8.6
+require (
+	github.com/chromedp/cdproto v0.0.0-20230109101555-6b041c6303cc
+	github.com/chromedp/chromedp v0.8.7
+)
 
 require (
-	github.com/chromedp/cdproto v0.0.0-20220924210414-0e3390be1777 // indirect
 	github.com/chromedp/sysutil v1.0.0 // indirect
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
